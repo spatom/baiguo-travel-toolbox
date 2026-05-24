@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>百果旅遊工具盒 (Baiguo Travel Toolbox)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            baiguo: {
+              ink: "#111827",
+              muted: "#6B7280",
+              line: "#E5E7EB",
+              bg: "#F9FAFB",
+              orange: "#F97316",
+              blue: "#1D4ED8",
+              green: "#06C755"
+            }
+          },
+          boxShadow: {
+            soft: "0 24px 60px rgba(15, 23, 42, 0.10)"
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+    }
+
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      background: #F9FAFB;
+    }
+
+    .view-panel {
+      opacity: 0;
+      transform: translateY(14px);
+      pointer-events: none;
+      max-height: 0;
+      overflow: hidden;
+      transition: opacity 300ms ease, transform 300ms ease, max-height 300ms ease;
+    }
+
+    .view-panel.is-active {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+      max-height: 900px;
+    }
+
+    .modal-panel {
+      opacity: 0;
+      transform: translateY(12px) scale(0.98);
+      transition: opacity 240ms ease, transform 240ms ease;
+    }
+
+    .modal-panel.is-visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  </style>
+</head>
+<body class="min-h-screen text-baiguo-ink antialiased">
+  <main class="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-8 sm:px-8 lg:px-10">
+    <header class="mb-8 pt-4 sm:mb-10">
+      <p class="mb-3 text-sm font-semibold tracking-wide text-baiguo-orange">Baiguo Travel Toolbox</p>
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 class="text-3xl font-bold leading-tight tracking-normal text-baiguo-ink sm:text-5xl">
+            百果旅遊工具盒
+          </h1>
+          <p class="mt-4 max-w-2xl text-base leading-7 text-baiguo-muted sm:text-lg">
+            把旅遊代訂、比價與後續服務整理成輕量好用的數位工具，從第一個價差共享工具開始。
+          </p>
+        </div>
+        <button
+          type="button"
+          id="backToLobby"
+          class="hidden shrink-0 rounded-full border border-baiguo-line bg-white px-5 py-2.5 text-sm font-semibold text-baiguo-ink shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
+        >
+          返回工具大廳
+        </button>
+      </div>
+    </header>
+
+    <section id="lobbyView" class="view-panel is-active" aria-labelledby="lobbyTitle">
+      <div class="mb-5 flex items-center justify-between">
+        <h2 id="lobbyTitle" class="text-xl font-bold text-baiguo-ink sm:text-2xl">工具大廳</h2>
+        <span class="rounded-full border border-baiguo-line bg-white px-3 py-1 text-sm font-medium text-baiguo-muted">第一階段 MVP</span>
+      </div>
+
+      <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <button
+          type="button"
+          id="openBookingTool"
+          class="group rounded-2xl border border-baiguo-line bg-white p-6 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-orange-100"
+          aria-controls="toolView"
+        >
+          <div class="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-xl font-bold text-baiguo-orange transition-all duration-300 group-hover:bg-baiguo-orange group-hover:text-white">
+            B
+          </div>
+          <h3 class="text-lg font-bold leading-7 text-baiguo-ink">
+            旅遊產品客製化代訂與價差共享工具
+          </h3>
+          <p class="mt-3 text-sm leading-6 text-baiguo-muted">
+            貼上第三方平台商品網址，留下聯絡方式，由百果專員協助爭取 B2B 同業差價。
+          </p>
+          <div class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-baiguo-orange">
+            開始詢價
+            <span class="transition-transform duration-300 group-hover:translate-x-1">→</span>
+          </div>
+        </button>
+      </div>
+    </section>
+
+    <section id="toolView" class="view-panel" aria-labelledby="toolTitle">
+      <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div class="rounded-2xl border border-baiguo-line bg-white p-6 shadow-sm sm:p-8">
+          <div class="mb-7">
+            <p class="mb-3 text-sm font-semibold text-baiguo-orange">客製化代訂與價差共享</p>
+            <h2 id="toolTitle" class="text-2xl font-bold leading-tight text-baiguo-ink sm:text-3xl">
+              貼上想買的旅遊產品，讓百果幫你爭取同業折扣價
+            </h2>
+            <p class="mt-4 text-base leading-7 text-baiguo-muted">
+              我們會保留您的詢價需求，並由專員透過 B2B 後台或人工管道協助確認可爭取的價差。
+            </p>
+          </div>
+
+          <form id="inquiryForm" class="space-y-5" novalidate>
+            <div>
+              <label for="productUrl" class="mb-2 block text-sm font-semibold text-baiguo-ink">商品網址</label>
+              <input
+                id="productUrl"
+                name="productUrl"
+                type="url"
+                inputmode="url"
+                placeholder="請貼上雄獅、可樂、山富 或各大旅行社行程網址..."
+                class="w-full rounded-2xl border border-baiguo-line bg-white px-4 py-3.5 text-base text-baiguo-ink outline-none transition-all duration-300 placeholder:text-gray-400 focus:border-baiguo-orange focus:ring-4 focus:ring-orange-100"
+              />
+            </div>
+
+            <div>
+              <label for="contactInfo" class="mb-2 block text-sm font-semibold text-baiguo-ink">聯絡資訊</label>
+              <input
+                id="contactInfo"
+                name="contactInfo"
+                type="text"
+                placeholder="請留下您的 LINE ID 或手機號碼"
+                class="w-full rounded-2xl border border-baiguo-line bg-white px-4 py-3.5 text-base text-baiguo-ink outline-none transition-all duration-300 placeholder:text-gray-400 focus:border-baiguo-orange focus:ring-4 focus:ring-orange-100"
+              />
+            </div>
+
+            <p id="formMessage" class="hidden rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700" role="alert"></p>
+
+            <button
+              type="submit"
+              class="w-full rounded-2xl bg-baiguo-blue px-6 py-4 text-base font-bold text-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-100"
+            >
+              獲取同業折扣價
+            </button>
+          </form>
+        </div>
+
+        <aside class="rounded-2xl border border-baiguo-line bg-white p-6 shadow-sm">
+          <h3 class="text-base font-bold text-baiguo-ink">處理流程</h3>
+          <ol class="mt-5 space-y-4 text-sm leading-6 text-baiguo-muted">
+            <li class="flex gap-3">
+              <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-50 text-xs font-bold text-baiguo-orange">1</span>
+              <span>送出商品網址與 LINE ID 或手機號碼。</span>
+            </li>
+            <li class="flex gap-3">
+              <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-50 text-xs font-bold text-baiguo-orange">2</span>
+              <span>百果專員透過 B2B 後台或人工管道查詢差價。</span>
+            </li>
+            <li class="flex gap-3">
+              <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-50 text-xs font-bold text-baiguo-orange">3</span>
+              <span>加入 LINE 官方帳號接收專屬報價與後續確認。</span>
+            </li>
+          </ol>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <div id="successModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/45 px-5 py-8" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-panel w-full max-w-lg rounded-2xl border border-baiguo-line bg-white p-6 shadow-soft sm:p-8">
+      <div class="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-green-50 text-2xl font-bold text-baiguo-green">
+        ✓
+      </div>
+      <h2 id="modalTitle" class="text-2xl font-bold leading-tight text-baiguo-ink">已收到您的需求</h2>
+      <p class="mt-4 text-base leading-7 text-baiguo-muted">
+        已收到您的需求！百果專員正透過 B2B 後台為您爭取同業差價，請點擊下方按鈕加入我們的 LINE 官方帳號接收您的專屬報價。
+      </p>
+      <div class="mt-7 grid gap-3 sm:grid-cols-[1fr_auto]">
+        <a
+          id="lineOaButton"
+          href="https://line.me/R/ti/p/@baiguo"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center justify-center rounded-2xl bg-baiguo-green px-5 py-3.5 text-base font-bold text-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:brightness-95 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-green-100"
+        >
+          加入 LINE 官方帳號
+        </a>
+        <button
+          type="button"
+          id="closeModal"
+          class="rounded-2xl border border-baiguo-line bg-white px-5 py-3.5 text-base font-bold text-baiguo-ink transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-gray-100"
+        >
+          關閉
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const config = {
+      lineOaBaseUrl: "https://line.me/R/ti/p/@baiguo"
+    };
+
+    const lobbyView = document.getElementById("lobbyView");
+    const toolView = document.getElementById("toolView");
+    const openBookingTool = document.getElementById("openBookingTool");
+    const backToLobby = document.getElementById("backToLobby");
+    const inquiryForm = document.getElementById("inquiryForm");
+    const productUrlInput = document.getElementById("productUrl");
+    const contactInfoInput = document.getElementById("contactInfo");
+    const formMessage = document.getElementById("formMessage");
+    const successModal = document.getElementById("successModal");
+    const modalPanel = successModal.querySelector(".modal-panel");
+    const closeModal = document.getElementById("closeModal");
+    const lineOaButton = document.getElementById("lineOaButton");
+    const submitButton = inquiryForm.querySelector('button[type="submit"]');
+
+    function showView(target) {
+      const showTool = target === "tool";
+      lobbyView.classList.toggle("is-active", !showTool);
+      toolView.classList.toggle("is-active", showTool);
+      backToLobby.classList.toggle("hidden", !showTool);
+
+      if (showTool) {
+        window.setTimeout(() => productUrlInput.focus(), 320);
+      }
+    }
+
+    function showError(message) {
+      formMessage.textContent = message;
+      formMessage.classList.remove("hidden");
+    }
+
+    function clearError() {
+      formMessage.textContent = "";
+      formMessage.classList.add("hidden");
+    }
+
+    async function submitInquiry(payload) {
+      let response = null;
+
+      try {
+        response = await fetch("http://localhost:3000/api/inquiries", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            productUrl: payload.productUrl,
+            contact: payload.contact,
+            source: payload.source
+          })
+        });
+      } catch (error) {
+        throw new Error("無法連線到伺服器，請確認後端服務已啟動後再試一次。");
+      }
+
+      let result = null;
+
+      try {
+        result = await response.json();
+      } catch (error) {
+        throw new Error("伺服器回應格式異常，請稍後再試。");
+      }
+
+      if (!response.ok || !result.ok) {
+        throw new Error(result.message || "詢價送出失敗，請稍後再試。");
+      }
+
+      return result;
+    }
+
+    function setSubmitting(isSubmitting) {
+      submitButton.disabled = isSubmitting;
+      submitButton.textContent = isSubmitting ? "送出中..." : "獲取同業折扣價";
+      submitButton.classList.toggle("cursor-not-allowed", isSubmitting);
+      submitButton.classList.toggle("opacity-70", isSubmitting);
+    }
+
+    function openSuccessModal(lineOaUrl) {
+      lineOaButton.href = lineOaUrl;
+      successModal.classList.remove("hidden");
+      successModal.classList.add("flex");
+      window.setTimeout(() => modalPanel.classList.add("is-visible"), 20);
+      closeModal.focus();
+    }
+
+    function hideSuccessModal() {
+      modalPanel.classList.remove("is-visible");
+      window.setTimeout(() => {
+        successModal.classList.add("hidden");
+        successModal.classList.remove("flex");
+      }, 240);
+    }
+
+    openBookingTool.addEventListener("click", () => showView("tool"));
+    backToLobby.addEventListener("click", () => showView("lobby"));
+    closeModal.addEventListener("click", hideSuccessModal);
+
+    successModal.addEventListener("click", (event) => {
+      if (event.target === successModal) {
+        hideSuccessModal();
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !successModal.classList.contains("hidden")) {
+        hideSuccessModal();
+      }
+    });
+
+    inquiryForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      clearError();
+
+      const payload = {
+        productUrl: productUrlInput.value.trim(),
+        contact: contactInfoInput.value.trim(),
+        source: "baiguo-toolbox"
+      };
+
+      if (!payload.productUrl || !payload.contact) {
+        showError("請填寫商品網址與聯絡方式。");
+        return;
+      }
+
+      setSubmitting(true);
+
+      try {
+        const result = await submitInquiry(payload);
+        inquiryForm.reset();
+        openSuccessModal(result.lineOaUrl);
+      } catch (error) {
+        showError(error.message || "詢價送出失敗，請稍後再試。");
+      } finally {
+        setSubmitting(false);
+      }
+    });
+  </script>
+</body>
+</html>

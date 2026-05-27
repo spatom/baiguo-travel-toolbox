@@ -1,31 +1,17 @@
 {
   "name": "baiguo-travel-toolbox",
-  "version": "0.1.0",
-  "description": "Baiguo Travel Toolbox backend for custom travel product inquiries and LINE OA handoff.",
+  "version": "1.0.0",
+  "description": "百果旅遊工具盒",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
-  },
-  "keywords": [
-    "baiguo",
-    "travel",
-    "toolbox",
-    "express",
-    "sqlite",
-    "line-oa"
-  ],
-  "author": "",
-  "license": "UNLICENSED",
-  "private": true,
-  "engines": {
-    "node": ">=18"
+    "start": "node server.js"
   },
   "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "node-fetch": "^2.7.0",
-    "sqlite3": "^5.1.7"
-  }
-}
+    "express": "^4.19.2",
+    "node-fetch": "^2.7.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "author": "",
+  "license": "ISC"

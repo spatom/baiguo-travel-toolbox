@@ -6,6 +6,7 @@ const path = require("path");
 require("dotenv").config();
 
 const app = express();
+app.use(express.static('public'));
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
 const DATABASE_PATH = process.env.DATABASE_PATH || path.join(DATA_DIR, "baiguo.sqlite");
@@ -15,7 +16,6 @@ fs.mkdirSync(DATA_DIR, { recursive: true });
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname));
 
 const db = new sqlite3.Database(DATABASE_PATH, (error) => {
   if (error) {

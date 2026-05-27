@@ -261,7 +261,7 @@
       let response = null;
 
       try {
-        response = await fetch("http://localhost:3000/api/inquiries", {
+        response = await fetch("https://tainyatt.zeabur.app/api/inquiries", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -273,7 +273,7 @@
           })
         });
       } catch (error) {
-        throw new Error("無法連線到伺服器，請確認後端服務已啟動後再試一次。");
+        throw new Error("無法連線到伺服器，請稍後再試或改由 LINE 官方帳號聯繫我們。");
       }
 
       let result = null;

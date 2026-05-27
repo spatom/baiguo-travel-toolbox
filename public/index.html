@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>百果旅遊市集 100coco | 同業與兼職者的旅遊科技工具箱</title>
+  <!-- 引入 Tailwind CSS CDN，讓我們不用寫繁雜的 CSS 就能做出美式科技感 -->
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+
+  <!-- 1. 導覽列 -->
+  <nav class="bg-white shadow-xs sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <span class="text-2xl font-black text-orange-500 tracking-wider">100coco</span>
+        <span class="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-bold">百果旅遊市集</span>
+      </div>
+      <div class="text-sm text-slate-500 font-medium">
+        <span>未來版圖：funtaiwan 國際站 🌐</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 2. 英雄主視覺區 (行銷漏斗起點：放大痛點與價值) -->
+  <header class="bg-gradient-to-br from-slate-900 to-indigo-950 text-white py-16 px-4 text-center">
+    <div class="max-w-3xl mx-auto">
+      <span class="text-orange-400 font-bold tracking-widest text-sm uppercase bg-orange-500/10 px-3 py-1 rounded-full">B2B 旅遊自動化革命</span>
+      <h1 class="text-4xl md:text-5xl font-extrabold mt-4 tracking-tight leading-tight">
+        讓科技幫你出團，<br class="md:hidden"><span class="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-300">把流量瞬間變現</span>
+      </h1>
+      <p class="mt-6 text-base md:text-lg text-slate-300 max-w-xl mx-auto leading-relaxed">
+        百果旅遊市集專為兼職創作者與旅遊同業打造。擺脫繁瑣的手工複製、查價與私訊，用科技工具箱幫你 24 小時精準結單。
+      </p>
+    </div>
+  </header>
+
+  <!-- 3. 核心工具市集 (各工具的呈現與描述) -->
+  <main class="max-w-6xl mx-auto px-4 py-16">
+    <div class="text-center mb-12">
+      <h2 class="text-2xl md:text-3xl font-bold text-slate-900">核心科技工具箱</h2>
+      <p class="text-slate-500 mt-2">點選您需要使用的自動化工具，立刻倍增你的工作效率</p>
+    </div>
+
+    <!-- 工具卡片排版區 (Grid 兩欄佈局) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+      
+      <!-- 【工具一卡片】 -->
+      <div class="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-6 border border-slate-100 flex flex-col justify-between">
+        <div>
+          <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center text-2xl mb-4">📋</div>
+          <h3 class="text-xl font-bold text-slate-950">同業商品詢價轉換器</h3>
+          <p class="text-slate-500 text-sm mt-2 leading-relaxed">
+            還在手動複製雄獅旅遊行程貼給客人嗎？一鍵貼上商品網址，系統自動生成專屬詢價單號，並透過 LINE API 秒速通知，絕不漏接任何商機！
+          </p>
+        </div>
+        <div class="mt-6">
+          <a href="/tool1-inquiry/" class="inline-flex items-center justify-center w-full bg-slate-900 hover:bg-orange-500 text-white font-bold py-3 px-4 rounded-xl transition-colors duration-200">
+            開始使用工具 ➔
+          </a>
+        </div>
+      </div>
+
+      <!-- 【工具二卡片】 -->
+      <div class="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-6 border border-slate-100 flex flex-col justify-between relative overflow-hidden">
+        <!-- 裝飾用：右上角標籤 -->
+        <span class="absolute top-0 right-0 bg-amber-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-bl-xl tracking-wider animate-pulse">AI New</span>
+        
+        <div>
+          <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center text-2xl mb-4">🤖</div>
+          <h3 class="text-xl font-bold text-slate-950">AI 金牌自動分流銷售員</h3>
+          <p class="text-slate-500 text-sm mt-2 leading-relaxed">
+            兼職引流神器！專屬參數網址精準認人。客人加入 LINE 後，AI 自動引導詢問日期與人數，啟動「查價拖延戰術」逼出黃金精準客，特急件直接噴發到兼職者手機！
+          </p>
+        </div>
+        <div class="mt-6">
+          <a href="/tool2-ai-sales/" class="inline-flex items-center justify-center w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition-colors duration-200">
+            進入 AI 設定後台 ➔
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- 4. 頁尾 Footer -->
+  <footer class="bg-slate-900 text-slate-500 text-xs py-8 text-center border-t border-slate-800">
+    <p>© 2026 百果旅遊市集 100coco. All Tech Ecosystem Reserved.</p>
+  </footer>
+
+</body>
+</html>

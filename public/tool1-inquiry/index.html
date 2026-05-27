@@ -3,90 +3,191 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>百果旅遊市集 100coco | 同業與兼職者的旅遊科技工具箱</title>
-  <!-- 引入 Tailwind CSS CDN，讓我們不用寫繁雜的 CSS 就能做出美式科技感 -->
+  <title>同業商品詢價轉換器 | 百果旅遊市集 100coco</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans">
-
-  <!-- 1. 導覽列 -->
+<body class="min-h-screen bg-slate-50 text-slate-900 font-sans">
   <nav class="bg-white shadow-xs sticky top-0 z-50">
-    <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-      <div class="flex items-center space-x-2">
+    <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center gap-4">
+      <a href="/" class="flex items-center space-x-2" aria-label="返回百果旅遊工具盒大廳">
         <span class="text-2xl font-black text-orange-500 tracking-wider">100coco</span>
-        <span class="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-bold">百果旅遊市集</span>
-      </div>
-      <div class="text-sm text-slate-500 font-medium">
-        <span>未來版圖：funtaiwan 國際站 🌐</span>
-      </div>
+        <span class="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-bold">同業詢價工具</span>
+      </a>
+      <a href="/" class="text-sm text-slate-500 hover:text-orange-500 font-bold transition-colors duration-200">返回工具盒</a>
     </div>
   </nav>
 
-  <!-- 2. 英雄主視覺區 (行銷漏斗起點：放大痛點與價值) -->
-  <header class="bg-gradient-to-br from-slate-900 to-indigo-950 text-white py-16 px-4 text-center">
-    <div class="max-w-3xl mx-auto">
-      <span class="text-orange-400 font-bold tracking-widest text-sm uppercase bg-orange-500/10 px-3 py-1 rounded-full">B2B 旅遊自動化革命</span>
-      <h1 class="text-4xl md:text-5xl font-extrabold mt-4 tracking-tight leading-tight">
-        讓科技幫你出團，<br class="md:hidden"><span class="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-300">把流量瞬間變現</span>
-      </h1>
-      <p class="mt-6 text-base md:text-lg text-slate-300 max-w-xl mx-auto leading-relaxed">
-        百果旅遊市集專為兼職創作者與旅遊同業打造。擺脫繁瑣的手工複製、查價與私訊，用科技工具箱幫你 24 小時精準結單。
-      </p>
-    </div>
-  </header>
-
-  <!-- 3. 核心工具市集 (各工具的呈現與描述) -->
-  <main class="max-w-6xl mx-auto px-4 py-16">
-    <div class="text-center mb-12">
-      <h2 class="text-2xl md:text-3xl font-bold text-slate-900">核心科技工具箱</h2>
-      <p class="text-slate-500 mt-2">點選您需要使用的自動化工具，立刻倍增你的工作效率</p>
-    </div>
-
-    <!-- 工具卡片排版區 (Grid 兩欄佈局) -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-      
-      <!-- 【工具一卡片】 -->
-      <div class="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-6 border border-slate-100 flex flex-col justify-between">
-        <div>
-          <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center text-2xl mb-4">📋</div>
-          <h3 class="text-xl font-bold text-slate-950">同業商品詢價轉換器</h3>
-          <p class="text-slate-500 text-sm mt-2 leading-relaxed">
-            還在手動複製雄獅旅遊行程貼給客人嗎？一鍵貼上商品網址，系統自動生成專屬詢價單號，並透過 LINE API 秒速通知，絕不漏接任何商機！
-          </p>
-        </div>
-        <div class="mt-6">
-          <a href="/tool1-inquiry/" class="inline-flex items-center justify-center w-full bg-slate-900 hover:bg-orange-500 text-white font-bold py-3 px-4 rounded-xl transition-colors duration-200">
-            開始使用工具 ➔
-          </a>
+  <main class="max-w-5xl mx-auto px-4 py-10 md:py-16">
+    <section class="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-8 items-start">
+      <div class="pt-2">
+        <span class="inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-bold tracking-widest text-orange-600">B2B PRICE REQUEST</span>
+        <h1 class="mt-5 text-3xl md:text-5xl font-black leading-tight text-slate-950">
+          同業商品詢價轉換器
+        </h1>
+        <p class="mt-5 text-base md:text-lg leading-8 text-slate-600">
+          貼上雄獅、可樂、山富、Klook、KKday、Agoda 或其他旅遊商品網址，百果專員會透過 B2B 後台替您爭取同業差價，並用 LINE 回覆專屬報價。
+        </p>
+        <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+          <div class="rounded-2xl border border-slate-200 bg-white p-4">
+            <p class="font-black text-slate-950">1. 貼網址</p>
+            <p class="mt-1 text-slate-500">商品頁免截圖</p>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-white p-4">
+            <p class="font-black text-slate-950">2. 留 LINE</p>
+            <p class="mt-1 text-slate-500">專員快速接手</p>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-white p-4">
+            <p class="font-black text-slate-950">3. 收報價</p>
+            <p class="mt-1 text-slate-500">追蹤專屬單號</p>
+          </div>
         </div>
       </div>
 
-      <!-- 【工具二卡片】 -->
-      <div class="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-6 border border-slate-100 flex flex-col justify-between relative overflow-hidden">
-        <!-- 裝飾用：右上角標籤 -->
-        <span class="absolute top-0 right-0 bg-amber-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-bl-xl tracking-wider animate-pulse">AI New</span>
-        
-        <div>
-          <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center text-2xl mb-4">🤖</div>
-          <h3 class="text-xl font-bold text-slate-950">AI 金牌自動分流銷售員</h3>
-          <p class="text-slate-500 text-sm mt-2 leading-relaxed">
-            兼職引流神器！專屬參數網址精準認人。客人加入 LINE 後，AI 自動引導詢問日期與人數，啟動「查價拖延戰術」逼出黃金精準客，特急件直接噴發到兼職者手機！
-          </p>
+      <section class="rounded-2xl border border-slate-200 bg-white p-5 md:p-7 shadow-sm">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h2 class="text-xl font-black text-slate-950">建立專屬詢價單</h2>
+            <p class="mt-1 text-sm text-slate-500">系統會先儲存需求，再通知團隊處理。</p>
+          </div>
+          <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">LINE 接手</span>
         </div>
-        <div class="mt-6">
-          <a href="/tool2-ai-sales/" class="inline-flex items-center justify-center w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition-colors duration-200">
-            進入 AI 設定後台 ➔
-          </a>
-        </div>
-      </div>
 
-    </div>
+        <form id="inquiryForm" class="mt-7 space-y-5">
+          <div>
+            <label for="productUrl" class="block text-sm font-bold text-slate-700">旅遊商品網址</label>
+            <input
+              id="productUrl"
+              name="productUrl"
+              type="url"
+              required
+              placeholder="請貼上雄獅、可樂、山富 或各大旅行社行程網址..."
+              class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition-all duration-300 focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100"
+            >
+          </div>
+
+          <div>
+            <label for="contact" class="block text-sm font-bold text-slate-700">聯絡方式</label>
+            <input
+              id="contact"
+              name="contact"
+              type="text"
+              required
+              placeholder="請留下您的 LINE ID 或手機號碼"
+              class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition-all duration-300 focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100"
+            >
+          </div>
+
+          <input type="hidden" id="source" name="source" value="baiguo-toolbox">
+
+          <div id="formMessage" class="hidden rounded-2xl border px-4 py-3 text-sm font-bold"></div>
+
+          <button
+            id="submitButton"
+            type="submit"
+            class="inline-flex w-full items-center justify-center rounded-2xl bg-slate-900 px-5 py-4 font-black text-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:bg-orange-500 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+          >
+            獲取同業折扣價
+          </button>
+        </form>
+      </section>
+    </section>
   </main>
 
-  <!-- 4. 頁尾 Footer -->
-  <footer class="bg-slate-900 text-slate-500 text-xs py-8 text-center border-t border-slate-800">
-    <p>© 2026 百果旅遊市集 100coco. All Tech Ecosystem Reserved.</p>
-  </footer>
+  <div id="successModal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-950/60 px-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+      <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-2xl text-emerald-700">✓</div>
+      <h2 id="modalTitle" class="mt-5 text-center text-2xl font-black text-slate-950">詢價單已建立</h2>
+      <p class="mt-3 text-center leading-7 text-slate-600">
+        已收到您的需求！百果專員正透過 B2B 後台為您爭取同業差價，請點擊下方按鈕加入我們的 LINE 官方帳號接收您的專屬報價。
+      </p>
+      <div class="mt-5 rounded-2xl bg-slate-50 px-4 py-3 text-center">
+        <p class="text-xs font-bold text-slate-500">專屬詢價單號</p>
+        <p id="modalInquiryId" class="mt-1 text-lg font-black tracking-wide text-slate-950">-</p>
+      </div>
+      <div class="mt-6 grid grid-cols-1 gap-3">
+        <a id="lineButton" href="#" target="_blank" rel="noopener" class="inline-flex items-center justify-center rounded-2xl bg-[#06C755] px-5 py-4 font-black text-white transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+          加入 LINE 官方帳號
+        </a>
+        <button id="closeModal" type="button" class="rounded-2xl border border-slate-200 px-5 py-3 font-bold text-slate-600 transition-colors duration-200 hover:bg-slate-50">
+          繼續建立其他詢價
+        </button>
+      </div>
+    </div>
+  </div>
 
+  <script>
+    const form = document.querySelector("#inquiryForm");
+    const submitButton = document.querySelector("#submitButton");
+    const formMessage = document.querySelector("#formMessage");
+    const modal = document.querySelector("#successModal");
+    const modalInquiryId = document.querySelector("#modalInquiryId");
+    const lineButton = document.querySelector("#lineButton");
+    const closeModal = document.querySelector("#closeModal");
+
+    function showMessage(message, type = "error") {
+      formMessage.textContent = message;
+      formMessage.className = type === "error"
+        ? "rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700"
+        : "rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700";
+    }
+
+    async function submitInquiry(payload) {
+      const response = await fetch("/api/inquiries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.ok) {
+        throw new Error(result.message || "送出失敗，請稍後再試。");
+      }
+
+      return result;
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      formMessage.classList.add("hidden");
+
+      const formData = new FormData(form);
+      const payload = {
+        productUrl: String(formData.get("productUrl") || "").trim(),
+        contact: String(formData.get("contact") || "").trim(),
+        source: String(formData.get("source") || "baiguo-toolbox")
+      };
+
+      if (!payload.productUrl || !payload.contact) {
+        showMessage("請填寫商品網址與聯絡方式。");
+        return;
+      }
+
+      submitButton.disabled = true;
+      submitButton.textContent = "正在建立詢價單...";
+
+      try {
+        const result = await submitInquiry(payload);
+        const inquiryId = result.inquiryId || result.data?.orderId || "-";
+        const lineUrl = result.lineOaUrl || "#";
+
+        modalInquiryId.textContent = inquiryId;
+        lineButton.href = lineUrl;
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+        form.reset();
+      } catch (error) {
+        showMessage(error.message);
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = "獲取同業折扣價";
+      }
+    });
+
+    closeModal.addEventListener("click", () => {
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    });
+  </script>
 </body>
 </html>

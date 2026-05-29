@@ -92,7 +92,29 @@ function buildDifyChatUrl() {
         return null;
     }
 
+    if (baseUrl.endsWith('/chat-messages')) {
+        return baseUrl;
+    }
+
     return baseUrl.endsWith('/v1') ? `${baseUrl}/chat-messages` : `${baseUrl}/v1/chat-messages`;
+}
+
+function getDifyBaseUrlMode() {
+    const baseUrl = String(process.env.DIFY_API_BASE_URL || '').trim().replace(/\/+$/, '');
+
+    if (!baseUrl) {
+        return 'missing';
+    }
+
+    if (baseUrl.endsWith('/chat-messages')) {
+        return 'full-chat-endpoint';
+    }
+
+    if (baseUrl.endsWith('/v1')) {
+        return 'v1-base-url';
+    }
+
+    return 'root-base-url';
 }
 
 async function getLineAccessToken() {
@@ -269,7 +291,8 @@ app.get('/health', (req, res) => {
         hasLineUserId: getEnvFlag('LINE_USER_ID'),
         hasLineOaUrl: getEnvFlag('LINE_OA_URL'),
         hasDifyBaseUrl: getEnvFlag('DIFY_API_BASE_URL'),
-        hasDifyKey: getEnvFlag('DIFY_API_KEY')
+        hasDifyKey: getEnvFlag('DIFY_API_KEY'),
+        difyBaseUrlMode: getDifyBaseUrlMode()
     });
 });
 

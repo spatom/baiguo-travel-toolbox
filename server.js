@@ -163,6 +163,15 @@ app.get('/', (req, res) => {
     res.sendFile(indexPath);
 });
 
+// 雲端健康檢查：用來確認 Zeabur 上的 Node 程式真的有啟動
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        ok: true,
+        service: 'baiguo-travel-toolbox',
+        webhookPath: '/callback'
+    });
+});
+
 // ==========================================
 // 2. 靜態資源讀取排在後面（只負責拿圖片、CSS、JS，不准攔截路由）
 // ==========================================
@@ -290,7 +299,7 @@ app.post('/api/inquiries', async (req, res) => {
 // ==========================================
 // 🚀 4. 新增：LINE Webhook 接收點（AI 金牌銷售員的鸚鵡測試耳朵）
 // ==========================================
-app.post('/callback', async (req, res) => {
+async function handleLineWebhook(req, res) {
     try {
         const events = req.body.events;
         
@@ -365,7 +374,9 @@ app.post('/callback', async (req, res) => {
         console.error('[Webhook] ❌ 處理失敗:', error.message);
         res.status(200).send('OK'); // 業界標準：即使報錯也回 200，避免 LINE 伺服器連續重發
     }
-});
+}
+
+app.post(['/callback', '/webhook', '/api/line', '/line/webhook'], handleLineWebhook);
 
 
 // 💡 完美對接 Zeabur 雲端規定的連接埠

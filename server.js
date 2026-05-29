@@ -25,6 +25,8 @@ let lastAiDiagnostic = {
     checkedAt: null
 };
 
+const difyConversationMap = new Map();
+
 const DATA_DIR = path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -182,6 +184,8 @@ async function getLineAccessToken() {
 async function askDify(userMessage, userId) {
     const difyUrl = buildDifyChatUrl();
     const difyApiKey = String(process.env.DIFY_API_KEY || '').trim();
+    const difyUserId = userId || 'line-user';
+    const conversationId = difyConversationMap.get(difyUserId) || '';
 
     if (!difyUrl || !difyApiKey) {
         updateAiDiagnostic({
@@ -211,7 +215,8 @@ async function askDify(userMessage, userId) {
                 inputs: {},
                 query: userMessage,
                 response_mode: 'blocking',
-                user: userId || 'line-user'
+                user: difyUserId,
+                conversation_id: conversationId
             })
         });
     } catch (error) {
@@ -253,13 +258,19 @@ async function askDify(userMessage, userId) {
 
     const result = await response.json();
     const answer = String(result.answer || result.message || '').trim();
+    const nextConversationId = String(result.conversation_id || '').trim();
+
+    if (nextConversationId) {
+        difyConversationMap.set(difyUserId, nextConversationId);
+    }
 
     updateAiDiagnostic({
         status: answer ? 'ok' : 'empty-answer',
         stage: 'dify-response',
         httpStatus: response.status,
         latencyMs,
-        error: answer ? null : 'Dify 回傳成功，但沒有 answer 文字。'
+        error: answer ? null : 'Dify 回傳成功，但沒有 answer 文字。',
+        hasConversationId: Boolean(nextConversationId || conversationId)
     });
 
     return answer || '我已收到您的訊息，稍後會再協助您。';
@@ -387,7 +398,9 @@ app.get('/health', (req, res) => {
         lastAiHttpStatus: lastAiDiagnostic.httpStatus,
         lastAiLatencyMs: lastAiDiagnostic.latencyMs,
         lastAiError: lastAiDiagnostic.error,
-        lastAiCheckedAt: lastAiDiagnostic.checkedAt
+        lastAiCheckedAt: lastAiDiagnostic.checkedAt,
+        lastAiHasConversationId: Boolean(lastAiDiagnostic.hasConversationId),
+        activeDifyConversations: difyConversationMap.size
     });
 });
 

@@ -16,6 +16,15 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+let lastAiDiagnostic = {
+    status: 'not-tested',
+    stage: null,
+    httpStatus: null,
+    latencyMs: null,
+    error: null,
+    checkedAt: null
+};
+
 const DATA_DIR = path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -117,6 +126,31 @@ function getDifyBaseUrlMode() {
     return 'root-base-url';
 }
 
+function getDifyTimeoutMs() {
+    const timeoutMs = Number(process.env.DIFY_TIMEOUT_MS || 45000);
+
+    if (!Number.isFinite(timeoutMs)) {
+        return 45000;
+    }
+
+    return Math.min(Math.max(timeoutMs, 5000), 55000);
+}
+
+function sanitizeDiagnosticError(error) {
+    return String(error && error.message ? error.message : error || 'unknown error')
+        .replace(/Bearer\s+[A-Za-z0-9._-]+/g, 'Bearer [hidden]')
+        .replace(/app-[A-Za-z0-9._-]+/g, 'app-[hidden]')
+        .slice(0, 300);
+}
+
+function updateAiDiagnostic(patch) {
+    lastAiDiagnostic = {
+        ...lastAiDiagnostic,
+        ...patch,
+        checkedAt: new Date().toISOString()
+    };
+}
+
 async function getLineAccessToken() {
     const channelId = String(process.env.LINE_CHANNEL_ID || '').trim();
     const channelSecret = String(process.env.LINE_CHANNEL_SECRET || '').trim();
@@ -150,31 +184,85 @@ async function askDify(userMessage, userId) {
     const difyApiKey = String(process.env.DIFY_API_KEY || '').trim();
 
     if (!difyUrl || !difyApiKey) {
+        updateAiDiagnostic({
+            status: 'failed',
+            stage: 'config',
+            httpStatus: null,
+            latencyMs: null,
+            error: '缺少 DIFY_API_BASE_URL 或 DIFY_API_KEY 環境變數'
+        });
         throw new Error('缺少 DIFY_API_BASE_URL 或 DIFY_API_KEY 環境變數');
     }
 
-    const response = await fetch(difyUrl, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${difyApiKey}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            inputs: {},
-            query: userMessage,
-            response_mode: 'blocking',
-            conversation_id: '',
-            user: userId || 'line-user'
-        })
-    });
+    const startedAt = Date.now();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), getDifyTimeoutMs());
+    let response;
+
+    try {
+        response = await fetch(difyUrl, {
+            method: 'POST',
+            signal: controller.signal,
+            headers: {
+                'Authorization': `Bearer ${difyApiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                inputs: {},
+                query: userMessage,
+                response_mode: 'blocking',
+                user: userId || 'line-user'
+            })
+        });
+    } catch (error) {
+        const latencyMs = Date.now() - startedAt;
+        const isTimeout = error && error.name === 'AbortError';
+        const diagnosticError = isTimeout
+            ? `Dify API 超過 ${getDifyTimeoutMs()}ms 未回應`
+            : sanitizeDiagnosticError(error);
+
+        updateAiDiagnostic({
+            status: 'failed',
+            stage: isTimeout ? 'dify-timeout' : 'dify-network',
+            httpStatus: null,
+            latencyMs,
+            error: diagnosticError
+        });
+
+        throw new Error(diagnosticError);
+    } finally {
+        clearTimeout(timeout);
+    }
+
+    const latencyMs = Date.now() - startedAt;
 
     if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Dify API 回應失敗：${errorText}`);
+        const errorMessage = `Dify API 回應失敗 (${response.status})：${errorText}`;
+
+        updateAiDiagnostic({
+            status: 'failed',
+            stage: 'dify-http',
+            httpStatus: response.status,
+            latencyMs,
+            error: sanitizeDiagnosticError(errorMessage)
+        });
+
+        throw new Error(errorMessage);
     }
 
     const result = await response.json();
-    return String(result.answer || result.message || '').trim() || '我已收到您的訊息，稍後會再協助您。';
+    const answer = String(result.answer || result.message || '').trim();
+
+    updateAiDiagnostic({
+        status: answer ? 'ok' : 'empty-answer',
+        stage: 'dify-response',
+        httpStatus: response.status,
+        latencyMs,
+        error: answer ? null : 'Dify 回傳成功，但沒有 answer 文字。'
+    });
+
+    return answer || '我已收到您的訊息，稍後會再協助您。';
 }
 
 async function replyLineMessage(replyToken, text) {
@@ -292,7 +380,14 @@ app.get('/health', (req, res) => {
         hasLineOaUrl: getEnvFlag('LINE_OA_URL'),
         hasDifyBaseUrl: getEnvFlag('DIFY_API_BASE_URL'),
         hasDifyKey: getEnvFlag('DIFY_API_KEY'),
-        difyBaseUrlMode: getDifyBaseUrlMode()
+        difyBaseUrlMode: getDifyBaseUrlMode(),
+        difyTimeoutMs: getDifyTimeoutMs(),
+        lastAiStatus: lastAiDiagnostic.status,
+        lastAiStage: lastAiDiagnostic.stage,
+        lastAiHttpStatus: lastAiDiagnostic.httpStatus,
+        lastAiLatencyMs: lastAiDiagnostic.latencyMs,
+        lastAiError: lastAiDiagnostic.error,
+        lastAiCheckedAt: lastAiDiagnostic.checkedAt
     });
 });
 

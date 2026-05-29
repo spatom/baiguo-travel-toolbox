@@ -141,7 +141,6 @@ async function updateWebhookStatus(inquiryId, status, errorMessage = null) {
 
 // 工具一路由（同業詢價轉換器）
 app.get(['/tool1-inquiry', '/tool1-inquiry/'], (req, res) => {
-    // 優先尋找 public/tool1-inquiry/index.html，找不到就找外層的
     const tool1Path = fs.existsSync(path.join(__dirname, 'public', 'tool1-inquiry', 'index.html'))
         ? path.join(__dirname, 'public', 'tool1-inquiry', 'index.html')
         : path.join(__dirname, 'tool1-inquiry', 'index.html');
@@ -287,7 +286,89 @@ app.post('/api/inquiries', async (req, res) => {
     })();
 });
 
-// 💡 完美對接 Zeabur 雲端規定的 3000 連接埠
+
+// ==========================================
+// 🚀 4. 新增：LINE Webhook 接收點（AI 金牌銷售員的鸚鵡測試耳朵）
+// ==========================================
+app.post('/callback', async (req, res) => {
+    try {
+        const events = req.body.events;
+        
+        // 如果沒有事件（例如 LINE 官方的測試連線），直接回傳 OK 結束
+        if (!events || events.length === 0) {
+            return res.status(200).send('OK');
+        }
+
+        const event = events[0];
+        
+        // 確保這是一則「文字訊息」事件，才進行處理
+        if (event.type === 'message' && event.message.type === 'text') {
+            const replyToken = event.replyToken;     // LINE 臨時回覆憑證
+            const userMessage = event.message.text;  // 客人輸入的文字
+
+            // 取得我們需要的 LINE 驗證金鑰
+            const channelId = process.env.LINE_CHANNEL_ID;
+            const channelSecret = process.env.LINE_CHANNEL_SECRET;
+
+            if (!channelId || !channelSecret) {
+                console.error('[Webhook] ❌ 錯誤：缺少 LINE_CHANNEL_ID 或 LINE_CHANNEL_SECRET 環境變數');
+                return res.status(200).send('OK');
+            }
+
+            // 動態跟 LINE 申請臨時的存取通行證（與你原有的邏輯保持高度一致）
+            const tokenParams = new URLSearchParams();
+            tokenParams.append('grant_type', 'client_credentials');
+            tokenParams.append('client_id', channelId);
+            tokenParams.append('client_secret', channelSecret);
+
+            const tokenResponse = await fetch('https://api.line.me/v2/oauth/accessToken', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: tokenParams
+            });
+
+            if (tokenResponse.ok) {
+                const tokenData = await tokenResponse.json();
+                const realAccessToken = tokenData.access_token;
+
+                // 準備鸚鵡回覆的資料格式
+                const replyData = {
+                    replyToken: replyToken,
+                    messages: [
+                        {
+                            type: 'text',
+                            text: `（2號工具武器測試）你剛剛說了：${userMessage}`
+                        }
+                    ]
+                };
+
+                // 用原生 fetch 秒讀秒回給使用者
+                await fetch('https://api.line.me/v2/bot/message/reply', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${realAccessToken}`
+                    },
+                    body: JSON.stringify(replyData)
+                });
+                
+                console.log(`[Webhook] 🦜 鸚鵡成功回覆訊息: "${userMessage}"`);
+            } else {
+                console.error('[Webhook] ❌ 無法取得 LINE 驗證通行證');
+            }
+        }
+
+        // 必須回覆 LINE 伺服器 200 OK
+        res.status(200).send('OK');
+
+    } catch (error) {
+        console.error('[Webhook] ❌ 處理失敗:', error.message);
+        res.status(200).send('OK'); // 業界標準：即使報錯也回 200，避免 LINE 伺服器連續重發
+    }
+});
+
+
+// 💡 完美對接 Zeabur 雲端規定的連接埠
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 百果旅遊市集後端引擎已在連接埠 ${PORT} 完美啟動！`);

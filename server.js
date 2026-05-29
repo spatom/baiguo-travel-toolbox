@@ -25,6 +25,7 @@ let lastAiDiagnostic = {
     checkedAt: null
 };
 
+// 💡 【關鍵修正】使用 Map 物件儲存 LINE userId 與 Dify conversation_id 的對應關係
 const difyConversationMap = new Map();
 
 const DATA_DIR = path.join(__dirname, 'data');
@@ -129,13 +130,14 @@ function getDifyBaseUrlMode() {
 }
 
 function getDifyTimeoutMs() {
-    const timeoutMs = Number(process.env.DIFY_TIMEOUT_MS || 45000);
+    // 💡 【修正】Dify API 的超時時間可以設定長一點，因為 LINE 的回應是異步的
+    const timeoutMs = Number(process.env.DIFY_TIMEOUT_MS || 60000); // 預設 60 秒
 
     if (!Number.isFinite(timeoutMs)) {
-        return 45000;
+        return 60000;
     }
 
-    return Math.min(Math.max(timeoutMs, 5000), 55000);
+    return Math.min(Math.max(timeoutMs, 5000), 120000); // 最小 5 秒，最大 120 秒
 }
 
 function sanitizeDiagnosticError(error) {
@@ -185,6 +187,7 @@ async function askDify(userMessage, userId) {
     const difyUrl = buildDifyChatUrl();
     const difyApiKey = String(process.env.DIFY_API_KEY || '').trim();
     const difyUserId = userId || 'line-user';
+    // 💡 【關鍵修正】從 difyConversationMap 取得該用戶的 conversation_id
     const conversationId = difyConversationMap.get(difyUserId) || '';
 
     if (!difyUrl || !difyApiKey) {
@@ -216,7 +219,7 @@ async function askDify(userMessage, userId) {
                 query: userMessage,
                 response_mode: 'blocking',
                 user: difyUserId,
-                conversation_id: conversationId
+                conversation_id: conversationId // 💡 【關鍵修正】傳遞 conversation_id 給 Dify
             })
         });
     } catch (error) {
@@ -260,6 +263,7 @@ async function askDify(userMessage, userId) {
     const answer = String(result.answer || result.message || '').trim();
     const nextConversationId = String(result.conversation_id || '').trim();
 
+    // 💡 【關鍵修正】儲存 Dify 回傳的 conversation_id，用於下次對話
     if (nextConversationId) {
         difyConversationMap.set(difyUserId, nextConversationId);
     }
@@ -294,6 +298,29 @@ async function replyLineMessage(replyToken, text) {
     if (!replyResponse.ok) {
         const errorText = await replyResponse.text();
         throw new Error(`LINE Reply API 回應失敗：${errorText}`);
+    }
+}
+
+// 💡 【新增】使用 LINE Push API 推送訊息，用於異步回應
+async function pushLineMessage(userId, text) {
+    const accessToken = await getLineAccessToken();
+
+    const pushResponse = await fetch('https://api.line.me/v2/bot/message/push', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+            to: userId,
+            messages: [{ type: 'text', text }]
+        })
+    });
+
+    if (!pushResponse.ok) {
+        const errorText = await pushResponse.text();
+        console.error(`[LINE Push] ❌ 發送推播失敗給 ${userId}:`, errorText);
+        throw new Error(`LINE Push API 回應失敗：${errorText}`);
     }
 }
 
@@ -447,79 +474,34 @@ app.post('/api/inquiries', async (req, res) => {
 
     const timeString = new Date(inquiry.createdAt).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
 
-    console.log(`\n[Webhook] 📥 收到新詢價！單號: ${inquiry.publicId}`);
+    console.log(`\n[Webhook] 收到新的詢價單 #${inquiry.publicId} (${timeString})`);
+    console.log(`[Webhook] 產品網址: ${inquiry.productUrl}`);
+    console.log(`[Webhook] 聯絡方式: ${inquiry.contact}`);
+    console.log(`[Webhook] 來源: ${inquiry.source}`);
+    console.log(`[Webhook] LINE OA 連結: ${inquiry.lineOaUrl}`);
 
     res.status(200).json({
         ok: true,
+        message: '詢價單已成功送出！',
         inquiryId: inquiry.publicId,
         lineOaUrl: inquiry.lineOaUrl
     });
 
-    // 🚀 背景非同步執行 LINE 高級驗證與推播
+    // 💡 【修正】異步發送 LINE 訊息，避免阻擋主回應流程
     (async () => {
-        const channelId = process.env.LINE_CHANNEL_ID;
-        const channelSecret = process.env.LINE_CHANNEL_SECRET;
-        const userId = process.env.LINE_USER_ID;
-
-        if (!channelId || !channelSecret || !userId) {
-            console.log(`[LINE] ⚠️ 略過推播：Zeabur 環境變數未填完整。`);
-            await updateWebhookStatus(inquiry.id, 'skipped', 'LINE 環境變數未填完整。');
-            return;
-        }
-
         try {
-            const tokenParams = new URLSearchParams();
-            tokenParams.append('grant_type', 'client_credentials');
-            tokenParams.append('client_id', channelId);
-            tokenParams.append('client_secret', channelSecret);
-
-            const tokenResponse = await fetch('https://api.line.me/v2/oauth/accessToken', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: tokenParams
-            });
-
-            if (!tokenResponse.ok) {
-                const errJson = await tokenResponse.json();
-                console.error(`[LINE] ❌ 申請通行證失敗:`, errJson);
+            const userId = process.env.LINE_USER_ID; // 假設 LINE_USER_ID 是管理員的 ID
+            if (!userId) {
+                console.warn('[LINE] ⚠️ 未設定 LINE_USER_ID，無法發送詢價通知。');
+                await updateWebhookStatus(inquiry.id, 'failed', '未設定 LINE_USER_ID');
                 return;
             }
-            
-            const tokenData = await tokenResponse.json();
-            const realAccessToken = tokenData.access_token;
 
-            const messageText = [
-                `🔔【百果旅遊市集 - 新詢價通知】`,
-                `-------------------------`,
-                `📌 詢價單號: ${inquiry.publicId}`,
-                `👤 客戶聯絡: ${contact}`,
-                `🔗 商品網址: ${productUrl}`,
-                `🌍 來源渠道: ${source}`,
-                `-------------------------`,
-                `⏰ 收到時間: ${timeString}`,
-                `👉 請儘速確認產品庫存並回覆客戶！`
-            ].join('\n');
+            const messageText = `✨ 新的詢價單 #${inquiry.publicId}！\n產品網址: ${inquiry.productUrl}\n聯絡方式: ${inquiry.contact}\n請點擊查看: ${inquiry.lineOaUrl}`;
 
-            const pushResponse = await fetch('https://api.line.me/v2/bot/message/push', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${realAccessToken}`
-                },
-                body: JSON.stringify({
-                    to: userId,
-                    messages: [{ type: 'text', text: messageText }]
-                })
-            });
-
-            if (pushResponse.ok) {
-                console.log(`[LINE] 🟢 詢價通知已成功送達您的手機！`);
-                await updateWebhookStatus(inquiry.id, 'sent');
-            } else {
-                const pushErr = await pushResponse.text();
-                console.error(`[LINE] ❌ 發送推播失敗:`, pushErr);
-                await updateWebhookStatus(inquiry.id, 'failed', pushErr);
-            }
+            await pushLineMessage(userId, messageText); // 使用新的 pushLineMessage 函數
+            console.log(`[LINE] 🟢 詢價通知已成功送達您的手機！`);
+            await updateWebhookStatus(inquiry.id, 'sent');
         } catch (error) {
             console.error(`[LINE] ❌ 背景執行異常:`, error.message);
             await updateWebhookStatus(inquiry.id, 'failed', error.message);
@@ -532,12 +514,15 @@ app.post('/api/inquiries', async (req, res) => {
 // 🚀 4. 新增：LINE Webhook 接收點（AI 金牌銷售員的鸚鵡測試耳朵）
 // ==========================================
 async function handleLineWebhook(req, res) {
+    // 💡 【關鍵修正】立即回覆 LINE 200 OK，避免 LINE 超時
+    res.status(200).send('OK'); 
+
     try {
         const events = req.body.events;
         
-        // 如果沒有事件（例如 LINE 官方的測試連線），直接回傳 OK 結束
+        // 如果沒有事件（例如 LINE 官方的測試連線），直接結束
         if (!events || events.length === 0) {
-            return res.status(200).send('OK');
+            return;
         }
 
         const event = events[0];
@@ -546,28 +531,33 @@ async function handleLineWebhook(req, res) {
         if (event.type === 'message' && event.message.type === 'text') {
             const replyToken = event.replyToken;     // LINE 臨時回覆憑證
             const userMessage = event.message.text;  // 客人輸入的文字
+            const userId = event.source && event.source.userId; // 取得 LINE 用戶 ID
+
+            if (!userId) {
+                console.warn('[Webhook] ⚠️ 無法取得 LINE 用戶 ID，無法進行對話記憶。');
+                return;
+            }
 
             try {
-                const aiReply = await askDify(userMessage, event.source && event.source.userId);
-                await replyLineMessage(replyToken, aiReply);
-                console.log(`[Webhook] ✅ Dify 已回覆 LINE 訊息: "${userMessage}"`);
+                const aiReply = await askDify(userMessage, userId); // 傳遞 userId 給 askDify
+                // 💡 【修正】使用 Push API 回覆，而不是 Reply API，因為 Reply API 必須在 5 秒內完成
+                await pushLineMessage(userId, aiReply); 
+                console.log(`[Webhook] ✅ Dify 已推播 LINE 訊息給 ${userId}: "${userMessage}"`);
             } catch (error) {
-                console.error('[Webhook] ❌ Dify/LINE 回覆失敗:', error.message);
+                console.error('[Webhook] ❌ Dify/LINE 推播失敗:', error.message);
 
+                // 💡 【修正】即使 Dify 失敗，也推播一個友善的錯誤訊息給用戶
                 try {
-                    await replyLineMessage(replyToken, '目前 AI 專員忙線中，我們已收到您的訊息，請稍後再試。');
-                } catch (replyError) {
-                    console.error('[Webhook] ❌ 備援回覆也失敗:', replyError.message);
+                    await pushLineMessage(userId, '目前 AI 專員忙線中，我們已收到您的訊息，請稍後再試。');
+                } catch (pushError) {
+                    console.error('[Webhook] ❌ 備援推播也失敗:', pushError.message);
                 }
             }
         }
 
-        // 必須回覆 LINE 伺服器 200 OK
-        res.status(200).send('OK');
-
     } catch (error) {
         console.error('[Webhook] ❌ 處理失敗:', error.message);
-        res.status(200).send('OK'); // 業界標準：即使報錯也回 200，避免 LINE 伺服器連續重發
+        // 這裡不需要再回覆 200 OK，因為前面已經回覆過了
     }
 }
 

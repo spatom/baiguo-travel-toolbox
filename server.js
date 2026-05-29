@@ -81,6 +81,101 @@ function buildLineOaUrl(publicId) {
     }
 }
 
+function getEnvFlag(name) {
+    return Boolean(String(process.env[name] || '').trim());
+}
+
+function buildDifyChatUrl() {
+    const baseUrl = String(process.env.DIFY_API_BASE_URL || '').trim().replace(/\/+$/, '');
+
+    if (!baseUrl) {
+        return null;
+    }
+
+    return baseUrl.endsWith('/v1') ? `${baseUrl}/chat-messages` : `${baseUrl}/v1/chat-messages`;
+}
+
+async function getLineAccessToken() {
+    const channelId = String(process.env.LINE_CHANNEL_ID || '').trim();
+    const channelSecret = String(process.env.LINE_CHANNEL_SECRET || '').trim();
+
+    if (!channelId || !channelSecret) {
+        throw new Error('缺少 LINE_CHANNEL_ID 或 LINE_CHANNEL_SECRET 環境變數');
+    }
+
+    const tokenParams = new URLSearchParams();
+    tokenParams.append('grant_type', 'client_credentials');
+    tokenParams.append('client_id', channelId);
+    tokenParams.append('client_secret', channelSecret);
+
+    const tokenResponse = await fetch('https://api.line.me/v2/oauth/accessToken', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: tokenParams
+    });
+
+    if (!tokenResponse.ok) {
+        const errorText = await tokenResponse.text();
+        throw new Error(`LINE 通行證申請失敗：${errorText}`);
+    }
+
+    const tokenData = await tokenResponse.json();
+    return tokenData.access_token;
+}
+
+async function askDify(userMessage, userId) {
+    const difyUrl = buildDifyChatUrl();
+    const difyApiKey = String(process.env.DIFY_API_KEY || '').trim();
+
+    if (!difyUrl || !difyApiKey) {
+        throw new Error('缺少 DIFY_API_BASE_URL 或 DIFY_API_KEY 環境變數');
+    }
+
+    const response = await fetch(difyUrl, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${difyApiKey}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            inputs: {},
+            query: userMessage,
+            response_mode: 'blocking',
+            conversation_id: '',
+            user: userId || 'line-user'
+        })
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Dify API 回應失敗：${errorText}`);
+    }
+
+    const result = await response.json();
+    return String(result.answer || result.message || '').trim() || '我已收到您的訊息，稍後會再協助您。';
+}
+
+async function replyLineMessage(replyToken, text) {
+    const accessToken = await getLineAccessToken();
+
+    const replyResponse = await fetch('https://api.line.me/v2/bot/message/reply', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+            replyToken,
+            messages: [{ type: 'text', text }]
+        })
+    });
+
+    if (!replyResponse.ok) {
+        const errorText = await replyResponse.text();
+        throw new Error(`LINE Reply API 回應失敗：${errorText}`);
+    }
+}
+
 async function createInquiry(payload) {
     const publicId = createPublicInquiryId();
     const createdAt = new Date().toISOString();
@@ -168,7 +263,13 @@ app.get('/health', (req, res) => {
     res.status(200).json({
         ok: true,
         service: 'baiguo-travel-toolbox',
-        webhookPath: '/callback'
+        webhookPath: '/callback',
+        hasLineChannelId: getEnvFlag('LINE_CHANNEL_ID'),
+        hasLineChannelSecret: getEnvFlag('LINE_CHANNEL_SECRET'),
+        hasLineUserId: getEnvFlag('LINE_USER_ID'),
+        hasLineOaUrl: getEnvFlag('LINE_OA_URL'),
+        hasDifyBaseUrl: getEnvFlag('DIFY_API_BASE_URL'),
+        hasDifyKey: getEnvFlag('DIFY_API_KEY')
     });
 });
 
@@ -315,55 +416,18 @@ async function handleLineWebhook(req, res) {
             const replyToken = event.replyToken;     // LINE 臨時回覆憑證
             const userMessage = event.message.text;  // 客人輸入的文字
 
-            // 取得我們需要的 LINE 驗證金鑰
-            const channelId = process.env.LINE_CHANNEL_ID;
-            const channelSecret = process.env.LINE_CHANNEL_SECRET;
+            try {
+                const aiReply = await askDify(userMessage, event.source && event.source.userId);
+                await replyLineMessage(replyToken, aiReply);
+                console.log(`[Webhook] ✅ Dify 已回覆 LINE 訊息: "${userMessage}"`);
+            } catch (error) {
+                console.error('[Webhook] ❌ Dify/LINE 回覆失敗:', error.message);
 
-            if (!channelId || !channelSecret) {
-                console.error('[Webhook] ❌ 錯誤：缺少 LINE_CHANNEL_ID 或 LINE_CHANNEL_SECRET 環境變數');
-                return res.status(200).send('OK');
-            }
-
-            // 動態跟 LINE 申請臨時的存取通行證（與你原有的邏輯保持高度一致）
-            const tokenParams = new URLSearchParams();
-            tokenParams.append('grant_type', 'client_credentials');
-            tokenParams.append('client_id', channelId);
-            tokenParams.append('client_secret', channelSecret);
-
-            const tokenResponse = await fetch('https://api.line.me/v2/oauth/accessToken', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: tokenParams
-            });
-
-            if (tokenResponse.ok) {
-                const tokenData = await tokenResponse.json();
-                const realAccessToken = tokenData.access_token;
-
-                // 準備鸚鵡回覆的資料格式
-                const replyData = {
-                    replyToken: replyToken,
-                    messages: [
-                        {
-                            type: 'text',
-                            text: `（2號工具武器測試）你剛剛說了：${userMessage}`
-                        }
-                    ]
-                };
-
-                // 用原生 fetch 秒讀秒回給使用者
-                await fetch('https://api.line.me/v2/bot/message/reply', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${realAccessToken}`
-                    },
-                    body: JSON.stringify(replyData)
-                });
-                
-                console.log(`[Webhook] 🦜 鸚鵡成功回覆訊息: "${userMessage}"`);
-            } else {
-                console.error('[Webhook] ❌ 無法取得 LINE 驗證通行證');
+                try {
+                    await replyLineMessage(replyToken, '目前 AI 專員忙線中，我們已收到您的訊息，請稍後再試。');
+                } catch (replyError) {
+                    console.error('[Webhook] ❌ 備援回覆也失敗:', replyError.message);
+                }
             }
         }
 
